@@ -2,9 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from "next/link";
 import { Badge, Button, ErrorBox, PageHeader, Panel, Spinner, Stat, Table, fmtDate, fmtDuration, fmtUsd, statusTone } from "@/components/ui";
-import { useApi } from "@/lib/api";
-
-const host = (url: string) => { try { return new URL(url).host; } catch { return url; } };
+import { formatAndroidTarget, useApi } from "@/lib/api";
 
 export default function HuntsPage() {
   const hunts = useApi<any[]>("/hunter/hunts", { refetch: 5000 });
@@ -18,8 +16,8 @@ export default function HuntsPage() {
   return (
     <>
       <PageHeader
-        title="Hunts"
-        subtitle="Each hunt explores an application in a real browser and reports only bugs it can prove: recorded evidence, two replays without AI, and a Playwright test."
+        title="Android Hunts"
+        subtitle="Each hunt explores an Android application on a real emulator via Appium (UiAutomator2) and reports only bugs it can prove: recorded evidence, two replays without AI, and an Appium test."
         actions={<Link href="/hunts/new"><Button>New hunt</Button></Link>}
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -27,15 +25,15 @@ export default function HuntsPage() {
         <Stat label="Confirmed bugs" value={confirmed} hint="Reproduced on every replay" />
         <Stat label="Cost per confirmed bug" value={confirmed ? fmtUsd(spend / confirmed) : "—"} hint={`${fmtUsd(spend)} AI spend in total`} />
         <Stat label="Latest benchmark" value={bench ? `${bench.benchmark.detected} / ${bench.benchmark.total}` : "—"}
-          hint={bench ? `seeded defects found, ${bench.benchmark.unmatchedObserved} unexplained` : "Hunt the demo shop to measure"} />
+          hint={bench ? `seeded defects found, ${bench.benchmark.unmatchedObserved} unexplained` : "Hunt Demo Shop APK to measure"} />
       </div>
-      <Panel title="All hunts" flush>
+      <Panel title="All Android hunts" flush>
         <Table
-          head={["Hunt", "Target", "Strategy", "Status", "Confirmed", "Intents", "AI cost", "Started", "Duration"]}
+          head={["Hunt", "Android App Target", "Strategy", "Status", "Confirmed", "Intents", "AI cost", "Started", "Duration"]}
           empty={<>No hunts yet. <Link className="font-medium text-blue-700 hover:underline" href="/hunts/new">Start one</Link>.</>}
           rows={list.map((h) => [
             <Link key="id" className="whitespace-nowrap font-mono text-xs font-medium text-blue-700 hover:underline" href={`/hunts/${h.id}`}>{h.id}</Link>,
-            <span key="t" className="text-slate-800">{host(h.url)}</span>,
+            <span key="t" className="font-mono text-xs text-slate-800">{formatAndroidTarget(h.url)}</span>,
             <span key="s">{h.strategy}{h.model && h.policy !== "Heuristic" && <span className="block text-xs text-slate-500">{h.model.model}{h.plannerModel ? ` + ${h.plannerModel.model}` : ""}</span>}</span>,
             <Badge key="st" tone={statusTone(h.status)}>{h.status}</Badge>,
             <span key="c" className="tabular-nums">{h.confirmed}<span className="text-slate-400"> / {h.observed + h.broken}</span></span>,

@@ -16,7 +16,7 @@ export function JourneysView({ project }: { project: string }) {
   const shown = journeys.find((j: any) => j.id === open);
   return (
     <div className="space-y-5">
-      <Panel title="Journeys" subtitle="Mined from hunts; proven only after two replays in fresh sessions, without a model, reached the same outcome." flush>
+      <Panel title="Journeys" subtitle="Mined from hunts; proven only after two replays in fresh mobile sessions, without a model, reached the same outcome." flush>
         <Table head={["Journey", "Role", "Outcome", "Steps", "Status", "Last runs", "Stories", ""]} empty="No journeys yet. Every project hunt mines the outcomes it reached."
           rows={journeys.map((j: any) => [
             j.name, j.role, <span key="o" className="font-mono text-xs">{j.outcome}</span>, j.steps,
@@ -24,10 +24,10 @@ export function JourneysView({ project }: { project: string }) {
             <span key="r" className="text-xs text-slate-500" title={j.runs.map((r: any) => `${fmtDate(r.at)} ${r.passed ? "passed" : "failed"}${r.problem ? `: ${r.problem}` : ""}`).join("\n")}>
               {j.runs.slice(0, 5).map((r: any) => (r.passed ? "✓" : "✗")).join(" ") || "—"}</span>,
             j.stories.join(", ") || "—",
-            j.spec ? <button key="t" className="text-xs text-blue-700 hover:underline" onClick={() => setOpen(open === j.id ? null : j.id)}>{open === j.id ? "Hide test" : "Playwright test"}</button> : "",
+            j.spec ? <button key="t" className="text-xs text-blue-700 hover:underline" onClick={() => setOpen(open === j.id ? null : j.id)}>{open === j.id ? "Hide test" : "Appium test"}</button> : "",
           ])} />
       </Panel>
-      {shown?.spec && <Panel title={`Playwright test: ${shown.name}`}><Code className="max-h-96">{shown.spec}</Code></Panel>}
+      {shown?.spec && <Panel title={`Appium test: ${shown.name}`}><Code className="max-h-96">{shown.spec}</Code></Panel>}
       {planned.length > 0 && (
         <Panel title="Planned" subtitle="Features the twin knows that write something, which no journey reaches yet." flush>
           <Table head={["Feature", "For role", "Outcome", "Stories"]} rows={planned.map((j: any) => [j.name, j.role || "—", <span key="o" className="font-mono text-xs">{j.outcome}</span>, j.stories.join(", ") || "—"])} />

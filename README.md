@@ -138,9 +138,9 @@ node scripts/dev.mjs
 ```
 
 Once running:
-1. Open **http://localhost:3100** and click **Mobile Lab & APKs** in the top bar.
-2. Click **Start Emulator & Appium** to boot the `Pixel_8` Android Emulator, configure `adb reverse` for ports `5290`/`5291`/`5299`, install `DemoShopMobile.apk`, `DemoHotelMobile.apk`, and `VoiceAppointmentMobile.apk`, launch the target app, and start Appium (`UiAutomator2`) on port `4723`.
-3. Select **Demo Shop Mobile** or **Demo Hotel Mobile** to launch a hunt, watch the live Pixel 8 stream, and export confirmed findings as **Appium (`UiAutomator2`)** or **Playwright** reproduction tests.
+1. Open **http://localhost:3100** and click **Android APKs & Demo** in the top bar (or go directly to **New hunt**, which auto-populates the `Demo Shop Android APK` target).
+2. In **Settings → Android Emulator & Services**, click **Boot / Sync Android Emulator** to boot the `Pixel_8` Android Emulator, configure `adb reverse` for ports `5290`/`5291`/`5299`, install `DemoShopMobile.apk`, `DemoHotelMobile.apk`, and `VoiceAppointmentMobile.apk`, and start Appium (`UiAutomator2`) on port `4723`.
+3. Select **Demo Shop Android APK** (`com.bughunter.mobile.shop`) or **Demo Hotel Android APK** (`com.bughunter.mobile.hotel`) to launch a hunt, watch the live emulator stream, and export confirmed findings as **Appium (`UiAutomator2`)** reproduction tests.
 
 ### Docker
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Badge, ErrorBox, PageHeader, Panel, Spinner, Table, fmtDate } from "@/components/ui";
 import { StateFlowGraph } from "@/components/flow-graph";
-import { useApi } from "@/lib/api";
+import { formatAndroidTarget, useApi } from "@/lib/api";
 
 export default function MapsPage() {
   const maps = useApi<any[]>("/hunter/maps");
@@ -17,16 +17,16 @@ export default function MapsPage() {
 
   return (
     <>
-      <PageHeader title="App maps" subtitle="What Bug Hunter has learned about each site across hunts: states, the routes between them, the API it observed and the intents from the last warm-up. Later hunts reuse it and survey less." />
+      <PageHeader title="Android App Maps" subtitle="What Bug Hunter has learned about each Android app across hunts: screens, the routes between them, the API it observed and the intents from the last warm-up. Later hunts reuse it and survey less." />
       {maps.data.length === 0 ? <Panel><p className="text-sm text-slate-500">No maps yet. Every hunt builds one.</p></Panel> : (
         <div className="grid gap-5 lg:grid-cols-[260px_1fr]">
-          <Panel title="Sites" flush>
+          <Panel title="Android Apps" flush>
             <ul className="divide-y divide-slate-100">
               {maps.data.map((x) => (
                 <li key={x.site}>
                   <button onClick={() => setSite(x.site)} className={`block w-full px-4 py-3 text-left ${x.site === current ? "bg-blue-50/60" : "hover:bg-slate-50"}`}>
-                    <div className="truncate font-mono text-xs text-slate-800">{x.site}</div>
-                    <div className="mt-0.5 text-xs text-slate-500">{x.states} states · {x.roads} roads · {x.apis} APIs · {x.hunts} hunts</div>
+                    <div className="truncate font-mono text-xs text-slate-800">{formatAndroidTarget(x.site)}</div>
+                    <div className="mt-0.5 text-xs text-slate-500">{x.states} screens · {x.roads} routes · {x.apis} APIs · {x.hunts} hunts</div>
                   </button>
                 </li>
               ))}
@@ -51,8 +51,8 @@ export default function MapsPage() {
               {m.states?.length > 0 && (
                 <StateFlowGraph states={m.states} roads={m.roads ?? []} />
               )}
-              <Panel title={`States (${m.states.length})`} flush>
-                <Table head={["State", "Title", "Visits", "Offers"]} rows={[...m.states].sort((a: any, b: any) => b.visits - a.visits).map((s: any) => [
+              <Panel title={`Mobile screens (${m.states.length})`} flush>
+                <Table head={["Screen", "Title", "Visits", "Offers"]} rows={[...m.states].sort((a: any, b: any) => b.visits - a.visits).map((s: any) => [
                   <span key="s" className="font-mono text-xs">{s.id}</span>, s.title, s.visits, <span key="o" className="text-xs text-slate-500">{s.landmarks.slice(0, 8).join(", ")}</span>,
                 ])} />
               </Panel>
@@ -64,7 +64,7 @@ export default function MapsPage() {
                   <span key="r" className="font-mono text-xs text-slate-500">{a.responseFields.slice(0, 10).join(", ") || "—"}</span>,
                 ])} />
               </Panel>
-              <Panel title={`Known routes (${m.roads.length})`} subtitle="Recorded action groups that move between states; the navigator drives these with no AI." flush>
+              <Panel title={`Known routes (${m.roads.length})`} subtitle="Recorded action groups that move between screens; the navigator drives these with no AI." flush>
                 <Table head={["From", "To", "Actions", "Worked / failed"]} rows={m.roads.slice(0, 60).map((r: any) => [
                   <span key="f" className="font-mono text-xs">{r.from}</span>, <span key="t" className="font-mono text-xs">{r.to}</span>,
                   <span key="a" className="text-xs text-slate-600">{r.signature}</span>, <span key="o" className="tabular-nums">{r.ok} / {r.failed}</span>,

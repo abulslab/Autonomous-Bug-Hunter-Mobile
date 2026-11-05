@@ -2,20 +2,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useState } from "react";
 import { Badge, Button, Code, Panel, statusTone, useToast } from "@/components/ui";
-import { API, api, getToken } from "@/lib/api";
+import { API, api, formatAndroidTarget, getToken } from "@/lib/api";
 
 const clip = (v?: string) => (v && v.length > 60 ? `${v.slice(0, 60)}… (${v.length} chars)` : v ?? "");
 
 // One line per recorded step, in plain words.
 export function describe(a: any, t: any) {
+  if (!a) return "";
   const el = t ? `${t.role} "${t.name}"` : a.ref != null ? `[${a.ref}]` : "";
   switch (a.type) {
-    case "open": return `Launch ${a.url}`;
-    case "fill": return `Type "${clip(a.value)}" into ${el}`;
+    case "open": return `Launch ${formatAndroidTarget(a.url)}`;
+    case "fill": return `Enter "${clip(a.value)}" into ${el}`;
     case "select": return `Select "${a.value}" in ${el}`;
     case "check": return `${a.value === "false" ? "Uncheck" : "Check"} ${el}`;
     case "press": return `Press ${a.key ?? "Enter"}${t ? ` in ${el}` : ""}`;
-    case "navigate": return `Deep-link ${a.url}`;
+    case "navigate": return `Navigate to ${a.url}`;
     case "request": return `API ${a.key} ${a.args?.path ?? ""}: ${a.args?.label ?? ""}`;
     case "click": return `Tap ${el}`;
     default: return a.type;
@@ -39,13 +40,14 @@ function useShot(hunt: string, n: number) {
   return src;
 }
 
+// Mobile screen snapshot: clicking opens the full screen capture.
 export function Shot({ hunt, n, onOpen }: { hunt: string; n: number; onOpen?: () => void }) {
   const src = useShot(hunt, n);
-  if (!src) return <div className="flex aspect-[9/16] max-h-64 w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 text-xs text-slate-400">No screen capture</div>;
+  if (!src) return <div className="flex aspect-[16/10] w-full items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-xs text-slate-400">No screen capture</div>;
   return (
-    <button type="button" onClick={onOpen} className="block w-full overflow-hidden rounded-xl border-2 border-slate-300 bg-slate-950 hover:border-indigo-500 transition-colors" title="View full mobile screen">
+    <button type="button" onClick={onOpen} className="block w-full overflow-hidden rounded-md border border-slate-200 hover:border-slate-400" title="View the full Android screen">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt={`Screen after step ${n}`} className="aspect-[9/16] max-h-72 w-full object-cover object-top" />
+      <img src={src} alt={`Android screen after step ${n}`} className="aspect-[16/10] w-full object-cover object-top" />
     </button>
   );
 }
@@ -65,9 +67,9 @@ export function ShotViewer({ hunt, steps, n, onChange, onClose }: { hunt: string
   });
   const step = steps.find((s) => s.n === n);
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-white" role="dialog" aria-label="Full mobile screen capture">
+    <div className="fixed inset-0 z-50 flex flex-col bg-white" role="dialog" aria-label="Full Android screen capture">
       <div className="flex items-center gap-3 border-b border-slate-200 px-5 py-3 text-sm">
-        <span className="font-semibold">Mobile Screen after step {n}</span>
+        <span className="font-semibold">Android screen after step {n}</span>
         {step && <span className="truncate text-slate-500">{describe(step.action, step.target)}</span>}
         <span className="ml-auto flex items-center gap-2">
           <Button variant="secondary" size="sm" disabled={i <= 0} onClick={() => onChange(withShots[i - 1])}>Previous</Button>
@@ -75,18 +77,17 @@ export function ShotViewer({ hunt, steps, n, onChange, onClose }: { hunt: string
           <Button variant="secondary" size="sm" onClick={onClose}>Close</Button>
         </span>
       </div>
-      <div className="flex-1 overflow-auto bg-slate-100 p-5">
+      <div className="flex-1 overflow-auto bg-slate-50 p-5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        {src ? <img src={src} alt={`Mobile screen after step ${n}`} className="mx-auto max-w-md rounded-2xl border-4 border-slate-800 bg-white shadow-xl" /> : <p className="p-8 text-center text-sm text-slate-500">Loading…</p>}
+        {src ? <img src={src} alt={`Full Android screen after step ${n}`} className="mx-auto max-w-none border border-slate-200 bg-white" /> : <p className="p-8 text-center text-sm text-slate-500">Loading…</p>}
       </div>
     </div>
   );
 }
 
-// The live view while a hunt runs (framed in a Pixel 8 device bezel); the recording once it has finished.
+// The live view while a hunt runs (the Android emulator session); the recording once it has finished.
 export function LiveMonitor({ h, active }: { h: any; active: boolean }) {
   const [media, setMedia] = useState<{ live: string | null; video: string | null } | null>(null);
-  const [source, setSource] = useState<"session" | "emulator">("session");
   const box = useRef<HTMLDivElement>(null);
   const retry = active && !media?.live ? h.steps.length : 0;
   useEffect(() => {
@@ -94,61 +95,21 @@ export function LiveMonitor({ h, active }: { h: any; active: boolean }) {
   }, [h.id, active, h.hasVideo, retry]);
   const last = h.steps[h.steps.length - 1];
   if (!active && !media?.video) return null;
-  const pkg = String(h.url ?? "").includes(":5291") || String(h.url ?? "").includes("hotel")
-    ? "com.bughunter.mobile.hotel"
-    : String(h.url ?? "").includes("voice")
-    ? "com.bughunter.mobile.voice"
-    : "com.bughunter.mobile.shop";
   return (
     <Panel
-      title={
-        <span className="flex flex-wrap items-center gap-2">
-          {active ? <Badge tone="danger">Live</Badge> : <Badge>Recording</Badge>}
-          <span>{active ? "Pixel 8 · Mobile Surface" : "Mobile Hunt Recording"}</span>
-          <Badge tone="accent">UiAutomator2</Badge>
-          <span className="font-mono text-xs font-normal text-slate-500">{pkg}</span>
-        </span>
-      }
+      title={<span className="flex items-center gap-2">{active ? <Badge tone="danger">Live</Badge> : <Badge>Recording</Badge>}{active ? "The hunter's Android emulator (Pixel_8 · UiAutomator2)" : "Recording of the mobile hunt"}</span>}
       subtitle={active && last ? `Step ${last.n}: ${describe(last.action, last.target)}` : undefined}
-      actions={
-        <div className="flex items-center gap-2">
-          {active && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setSource((s) => (s === "session" ? "emulator" : "session"))}
-            >
-              {source === "session" ? "Switch to ADB Screencap" : "Switch to Hunter Stream"}
-            </Button>
-          )}
-          <Button variant="secondary" size="sm" onClick={() => box.current?.requestFullscreen?.()}>Full screen</Button>
-        </div>
-      }
+      actions={<Button variant="secondary" size="sm" onClick={() => box.current?.requestFullscreen?.()}>Full screen</Button>}
     >
-      <div ref={box} className="flex items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-900 py-6 px-4">
-        <div className="relative mx-auto w-full max-w-[360px] overflow-hidden rounded-[2.2rem] border-[7px] border-slate-800 bg-black shadow-2xl">
-          {/* Pixel 8 top status bar + punch-hole camera */}
-          <div className="flex items-center justify-between bg-slate-950 px-4 py-1.5 text-[10px] font-medium text-slate-300">
-            <span>9:41</span>
-            <span className="h-2.5 w-2.5 rounded-full bg-slate-800 ring-1 ring-slate-700" />
-            <span>5G · 100%</span>
-          </div>
-          {active && source === "emulator" ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={`${API}/api/hunter/device/stream`} alt="Live Android Emulator ADB stream" className="aspect-[9/19.5] w-full object-contain bg-white" />
-          ) : active && media?.live ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={media.live} src={`${API}${media.live}`} alt="Live view of the mobile session" className="aspect-[9/19.5] w-full object-contain bg-white" />
-          ) : active ? (
-            <p className="py-32 text-center text-sm text-slate-400">Launching mobile session…</p>
-          ) : (
-            <video key={media!.video!} src={`${API}${media!.video}`} controls className="aspect-[9/19.5] w-full bg-black object-contain" />
-          )}
-          {/* Android gesture navigation pill */}
-          <div className="flex justify-center bg-slate-950 py-2">
-            <div className="h-1 w-24 rounded-full bg-slate-600" />
-          </div>
-        </div>
+      <div ref={box} className="flex items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-100">
+        {active && media?.live ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={media.live} src={`${API}${media.live}`} alt="Live view of the hunter's Android emulator" className="max-h-[70vh] w-full object-contain" />
+        ) : active ? (
+          <p className="py-24 text-sm text-slate-500">Connecting to the Android emulator…</p>
+        ) : (
+          <video key={media!.video!} src={`${API}${media!.video}`} controls className="max-h-[70vh] w-full" />
+        )}
       </div>
     </Panel>
   );
@@ -160,6 +121,7 @@ const provenance: Record<string, { label: string; tone: "success" | "accent" | "
   Judged: { label: "AI suspicion", tone: "warning", note: "The model's opinion. No check confirmed it; triage before filing." },
 };
 
+// shot: the step whose screen to show; a probe has no screen of its own, so the caller passes the last screen before it.
 export function FindingCard({ f, hunt, shot, onStep, onOpenShot, github, project }: { f: any; hunt: string; shot?: number; onStep: (n: number) => void; onOpenShot: (n: number) => void; github?: boolean; project?: string }) {
   const toast = useToast();
   const [triage, setTriage] = useState<string>("");
@@ -183,6 +145,7 @@ export function FindingCard({ f, hunt, shot, onStep, onOpenShot, github, project
     finally { setFiling(false); }
   };
   const p = provenance[f.provenance] ?? provenance.Judged;
+  const appiumSpec = f.appiumSpec ?? f.spec;
   return (
     <article className="rounded-lg border border-slate-200 bg-white">
       <header className="flex flex-wrap items-center gap-2 border-b border-slate-100 px-5 py-3">
@@ -202,14 +165,14 @@ export function FindingCard({ f, hunt, shot, onStep, onOpenShot, github, project
           </select>)}
         <span className="font-mono text-xs text-slate-400">{f.id}</span>
       </header>
-      <div className="grid gap-5 p-5 md:grid-cols-[1fr_240px]">
+      <div className="grid gap-5 p-5 md:grid-cols-[1fr_280px]">
         <div className="space-y-3 text-sm">
           <dl className="grid grid-cols-[80px_1fr] gap-x-3 gap-y-1.5">
             <dt className="text-slate-500">Expected</dt><dd className="text-slate-800">{f.expected}</dd>
             <dt className="text-slate-500">Actual</dt><dd className="text-slate-800">{f.actual}</dd>
             <dt className="text-slate-500">Found</dt>
             <dd className="text-slate-600">
-              <button className="font-medium text-blue-700 hover:underline" onClick={() => onStep(f.step)}>step {f.step}</button> on <span className="font-mono text-xs">{f.url}</span>
+              <button className="font-medium text-blue-700 hover:underline" onClick={() => onStep(f.step)}>step {f.step}</button> on <span className="font-mono text-xs">{formatAndroidTarget(f.url)}</span>
             </dd>
           </dl>
           {f.minimalSteps && (
@@ -227,18 +190,11 @@ export function FindingCard({ f, hunt, shot, onStep, onOpenShot, github, project
             <summary className="cursor-pointer text-xs font-medium text-slate-600">Steps to reproduce ({f.repro.length}{f.minimalSteps ? ", minimal" : ""})</summary>
             <ol className="mt-2 list-decimal space-y-0.5 pl-5 text-xs text-slate-700">{f.repro.map((r: string, i: number) => <li key={i}>{r}</li>)}</ol>
           </details>
-          {f.appiumSpec && (
+          {appiumSpec && (
             <details>
-              <summary className="cursor-pointer text-xs font-medium text-indigo-700">Appium (UiAutomator2 · Android APK) test</summary>
-              <div className="mt-2 flex justify-end"><Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(f.appiumSpec).then(() => toast.show("Copied Appium spec"))}>Copy</Button></div>
-              <Code className="max-h-80">{f.appiumSpec}</Code>
-            </details>
-          )}
-          {f.spec && (
-            <details>
-              <summary className="cursor-pointer text-xs font-medium text-slate-600">Playwright (Mobile Viewport) test</summary>
-              <div className="mt-2 flex justify-end"><Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(f.spec).then(() => toast.show("Copied Playwright spec"))}>Copy</Button></div>
-              <Code className="max-h-80">{f.spec}</Code>
+              <summary className="cursor-pointer text-xs font-medium text-slate-600">Appium (UiAutomator2) test</summary>
+              <div className="mt-2 flex justify-end"><Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(appiumSpec).then(() => toast.show("Copied"))}>Copy</Button></div>
+              <Code className="max-h-80">{appiumSpec}</Code>
             </details>
           )}
         </div>

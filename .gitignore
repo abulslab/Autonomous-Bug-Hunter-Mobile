@@ -11,12 +11,20 @@ next-env.d.ts
 *.tsbuildinfo
 
 data/
+**/data/
 hunter-media/
 TestResults/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 
 .env
 .env.*
 !.env.example
+appsettings.Development.json
+appsettings.Local.json
 appsettings.*.local.json
 
 artifacts/
@@ -29,5 +37,6 @@ android/build/
 android/app/build/
 android/local.properties
 *.keystore
+*.jks
 !android/apks/*.apk
 !android/gradle/wrapper/gradle-wrapper.jar

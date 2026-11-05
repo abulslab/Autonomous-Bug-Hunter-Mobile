@@ -4,6 +4,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5280";
 
+export function formatAndroidTarget(url?: string | null): string {
+  if (!url) return "—";
+  if (url.includes("5290")) return "com.bughunter.mobile.shop (DemoShopMobile.apk · :5290)";
+  if (url.includes("5291")) return "com.bughunter.mobile.hotel (DemoHotelMobile.apk · :5291)";
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
+}
+
 // Optional: when the API is started with an API key, store it once in this browser (localStorage "bughunter_api_key").
 export function getToken() {
   return typeof window === "undefined" ? null : localStorage.getItem("bughunter_api_key");

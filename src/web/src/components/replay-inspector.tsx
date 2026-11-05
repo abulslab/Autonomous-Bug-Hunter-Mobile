@@ -148,26 +148,26 @@ export function ReplayInspector({ hunt, initialStep }: ReplayInspectorProps) {
 
       {/* Synchronized Split-Pane Grid */}
       <div className="grid gap-5 lg:grid-cols-[1.1fr_1fr]">
-        {/* Left Pane: Visual Snapshot & DOM Target Surface */}
+        {/* Left Pane: Visual Snapshot & Mobile UI Target Surface */}
         <div className="space-y-4">
           <Panel
-            title={<span className="flex items-center gap-2"><span>Visual State: Step #{currentStep?.n}</span><Badge tone={currentStep?.ok ? "success" : "danger"}>{currentStep?.ok ? "Success" : "Error"}</Badge></span>}
+            title={<span className="flex items-center gap-2"><span>Android Screen: Step #{currentStep?.n}</span><Badge tone={currentStep?.ok ? "success" : "danger"}>{currentStep?.ok ? "Success" : "Error"}</Badge></span>}
             subtitle={currentStep?.url}
             actions={<Button variant="secondary" size="sm" onClick={() => setZoom(currentStep?.n)}>Full Screen</Button>}
           >
             <Shot hunt={hunt.id} n={currentStep?.n} onOpen={() => setZoom(currentStep?.n)} />
 
-            {/* DOM Element Surface */}
+            {/* Mobile UI Element Surface */}
             {currentStep?.target && (
               <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-xs">
-                <div className="font-semibold text-slate-700">Interacted DOM Element</div>
+                <div className="font-semibold text-slate-700">Interacted Mobile UI Element (UiAutomator2)</div>
                 <dl className="mt-1.5 grid grid-cols-[80px_1fr] gap-x-2 gap-y-1">
                   <dt className="text-slate-500">Element</dt>
-                  <dd className="font-mono text-slate-800">&lt;{currentStep.target.tag || "element"}&gt; {currentStep.target.role ? `role="${currentStep.target.role}"` : ""}</dd>
-                  {currentStep.target.name && (<><dt className="text-slate-500">Name</dt><dd className="text-slate-800">&quot;{currentStep.target.name}&quot;</dd></>)}
+                  <dd className="font-mono text-slate-800">&lt;{currentStep.target.tag || "view"}&gt; {currentStep.target.role ? `role="${currentStep.target.role}"` : ""}</dd>
+                  {currentStep.target.name && (<><dt className="text-slate-500">Text / Desc</dt><dd className="text-slate-800">&quot;{currentStep.target.name}&quot;</dd></>)}
                   {currentStep.target.label && (<><dt className="text-slate-500">Label</dt><dd className="text-slate-800">{currentStep.target.label}</dd></>)}
                   {currentStep.target.value != null && (<><dt className="text-slate-500">Value</dt><dd className="font-mono text-slate-800">{String(currentStep.target.value)}</dd></>)}
-                  {currentStep.target.testid && (<><dt className="text-slate-500">Test ID</dt><dd className="font-mono text-slate-800">{currentStep.target.testid}</dd></>)}
+                  {currentStep.target.testid && (<><dt className="text-slate-500">Resource ID</dt><dd className="font-mono text-slate-800">{currentStep.target.testid}</dd></>)}
                   {currentStep.target.invalid && (<><dt className="text-slate-500">Validation</dt><dd className="text-red-700">{currentStep.target.invalid}</dd></>)}
                 </dl>
               </div>
@@ -207,7 +207,7 @@ export function ReplayInspector({ hunt, initialStep }: ReplayInspectorProps) {
           {/* Recorded Network Traffic on this Step */}
           <Panel
             title={<span className="flex items-center gap-2"><span>Recorded HTTP Requests</span><Badge tone="accent">{currentStep?.requests?.length ?? 0}</Badge></span>}
-            subtitle="Network calls triggered by this action in the browser worker"
+            subtitle="Network calls triggered by this action in the mobile worker"
           >
             {currentStep?.requests?.length ? (
               <ul className="divide-y divide-slate-100 font-mono text-xs text-slate-800">

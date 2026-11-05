@@ -9,7 +9,7 @@ const statusTone: Record<string, Tone> = { declared: "neutral", observed: "succe
 const permTone: Record<string, Tone> = { allowed: "success", denied: "neutral", error: "warning", unknown: "muted" };
 const codeTone = (c: number): Tone => (c < 300 ? "success" : c < 500 ? "warning" : "danger");
 
-// The project's app twin: what Bug Hunter knows about the application, how it knows it, and as whom it saw it.
+// The project's app twin: what Bug Hunter knows about the Android application, how it knows it, and as whom it saw it.
 export function TwinView({ project }: { project: string }) {
   const twin = useApi<any>(`/projects/${project}/twin`);
   const history = useApi<any[]>(`/projects/${project}/twin/history`);
@@ -27,7 +27,7 @@ export function TwinView({ project }: { project: string }) {
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Twin version" value={`v${t.version}`} hint={`from ${t.fromHunt}, ${fmtDate(t.builtAt)}`} />
-        <Stat label="Pages" value={t.states.length} hint={`${t.roads.length} recorded routes`} />
+        <Stat label="Mobile screens" value={t.states.length} hint={`${t.roads.length} recorded routes`} />
         <Stat label="API endpoints" value={t.endpoints.length} />
         <Stat label="Unknowns" value={t.unknowns.length} hint="gaps the next hunt should close" />
       </div>
@@ -47,7 +47,7 @@ export function TwinView({ project }: { project: string }) {
             <Table head={["Entity", "Status", "Fields"]} rows={t.entities.map((e: any) => [e.name, <Badge key="s" tone={statusTone[e.status] ?? "neutral"}>{e.status}</Badge>, <span key="f" className="text-xs text-slate-600">{e.fields.join(", ")}</span>])} />
           </Panel>
           <Panel title="Features" flush>
-            <Table head={["Feature", "Status", "Endpoints and pages", "Stories"]} rows={t.features.map((f: any) => [f.name, <Badge key="s" tone={statusTone[f.status] ?? "neutral"}>{f.status}</Badge>,
+            <Table head={["Feature", "Status", "Endpoints and screens", "Stories"]} rows={t.features.map((f: any) => [f.name, <Badge key="s" tone={statusTone[f.status] ?? "neutral"}>{f.status}</Badge>,
               <span key="e" className="font-mono text-xs text-slate-600">{[...f.endpoints, ...f.pages].join(", ")}</span>, f.stories.join(", ") || "—"])} />
           </Panel>
         </div>
@@ -74,7 +74,7 @@ export function TwinView({ project }: { project: string }) {
           <ul className="list-disc space-y-0.5 pl-5 text-sm text-slate-700">{t.unknowns.map((u: any) => <li key={u.text}><Badge tone="muted">{u.kind}</Badge> {u.text}</li>)}</ul>
         </Panel>
       )}
-      <Panel title="API" subtitle="Every endpoint the browser called, with the statuses seen as each role. no-session: an engine probe resent the call without the session." flush>
+      <Panel title="API" subtitle="Every endpoint the Android app called, with the statuses seen as each role. no-session: an engine probe resent the call without the session." flush>
         <Table head={["Endpoint", "Status", "Statuses by role", "Fields", "Seen"]}
           rows={t.endpoints.map((e: any) => [
             <span key="e" className="font-mono text-xs" title={e.summary ?? ""}>{e.method} {e.path}{e.declared && <span className="ml-1 text-slate-400">· spec</span>}</span>,
@@ -96,8 +96,8 @@ export function TwinView({ project }: { project: string }) {
       {t.states?.length > 0 && (
         <StateFlowGraph states={t.states} roads={t.roads ?? []} />
       )}
-      <Panel title="Pages" flush>
-        <Table head={["Page", "Title", "Status", "Seen as", "Seen"]}
+      <Panel title="Mobile screens" flush>
+        <Table head={["Screen", "Title", "Status", "Seen as", "Seen"]}
           rows={t.states.map((s: any) => [
             <span key="i" className="font-mono text-xs">{s.id}</span>, s.title, <Badge key="s" tone={statusTone[s.status] ?? "neutral"}>{s.status}</Badge>, s.roles.join(", "),
             <span key="v" className="whitespace-nowrap text-xs text-slate-500">v{s.firstSeen}–v{s.lastSeen}</span>,
@@ -109,7 +109,7 @@ export function TwinView({ project }: { project: string }) {
             <Badge key="v" tone="accent">v{v.version}</Badge>, <span key="b" className="whitespace-nowrap text-xs">{fmtDate(v.builtAt)}</span>, <span key="h" className="font-mono text-xs">{v.fromHunt}</span>,
             v.knowledgeVersion ? `v${v.knowledgeVersion}` : "—",
             <span key="c" className="text-xs text-slate-600">{[
-              v.changes.statesAdded.length && `${v.changes.statesAdded.length} pages`, v.changes.endpointsAdded.length && `${v.changes.endpointsAdded.length} endpoints`,
+              v.changes.statesAdded.length && `${v.changes.statesAdded.length} screens`, v.changes.endpointsAdded.length && `${v.changes.endpointsAdded.length} endpoints`,
               v.changes.fieldsAdded.length && `${v.changes.fieldsAdded.length} fields`, v.changes.statusesAdded.length && `${v.changes.statusesAdded.length} statuses`,
             ].filter(Boolean).join(", ") || "nothing new"}</span>,
           ])} />

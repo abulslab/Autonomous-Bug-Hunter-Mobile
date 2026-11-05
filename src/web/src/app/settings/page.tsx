@@ -10,6 +10,7 @@ type SettingsSection = "llm" | "services" | "security";
 
 export default function SettingsPage() {
   const status = useApi<any>("/hunter/status", { refetch: 10000 });
+  const device = useApi<any>("/hunter/device/status", { refetch: 5000 });
   const [section, setSection] = useState<SettingsSection>("llm");
   const [checks, setChecks] = useState<Record<string, any>>({});
   const [custom, setCustom] = useState("");
@@ -40,7 +41,13 @@ export default function SettingsPage() {
     ["/hunter/status"]
   );
 
+  const bootEmulator = useAction(
+    async () => api<any>("/hunter/device/emulator/start", { method: "POST", json: { avdName: "Pixel_8", headless: true } }),
+    ["/hunter/device/status"]
+  );
+
   const s = status.data;
+  const dev = device.data;
 
   useEffect(() => {
     const saved = loadUserSettings();
@@ -123,7 +130,7 @@ export default function SettingsPage() {
     <>
       <PageHeader
         title="Settings & System Configuration"
-        subtitle="Manage default AI models, provider integrations, browser execution sandboxes, and security boundaries."
+        subtitle="Manage default AI models, provider integrations, Android emulator & Appium sandboxes, and security boundaries."
       />
 
       <div className="flex flex-col md:flex-row gap-6 items-start">
@@ -152,7 +159,7 @@ export default function SettingsPage() {
                 section === "services" ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
-              Services & Workers
+              Android Emulator &amp; Services
             </button>
             <button
               type="button"
@@ -162,7 +169,7 @@ export default function SettingsPage() {
                 section === "security" ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
               )}
             >
-              Security & Secrets
+              Security &amp; Secrets
             </button>
           </nav>
         </div>
@@ -171,14 +178,13 @@ export default function SettingsPage() {
         <div className="min-w-0 flex-1 w-full space-y-6">
           {section === "llm" && (
             <>
-              {/* One-Time Model Configuration Section (User Requirement 4) */}
               <Panel
                 title="AI Model Selection (One-time Setup)"
-                subtitle="Select the default foundation models used for autonomous browser exploration and intent synthesis."
+                subtitle="Select the default foundation models used for autonomous Android exploration and intent synthesis."
               >
                 <div className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="Default AI Driver Model" hint="Selects browser actions, forms, and clicks">
+                    <Field label="Default AI Driver Model" hint="Selects mobile taps, inputs, and actions">
                       <Select value={driverModel} onChange={(e) => setDriverModel(e.target.value)}>
                         {models.map((m) => (
                           <option key={m.id} value={m.id}>
@@ -362,8 +368,34 @@ export default function SettingsPage() {
 
           {section === "services" && (
             <div className="grid gap-6">
-              <Panel title="Platform Services & Daemons">
-                <dl className="grid grid-cols-[160px_1fr] gap-y-3 text-sm">
+              <Panel
+                title="Android Emulator & Appium Services"
+                actions={
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    disabled={bootEmulator.isPending}
+                    onClick={() => bootEmulator.mutate(undefined as never)}
+                  >
+                    {bootEmulator.isPending ? "Booting Emulator…" : "Boot / Sync Android Emulator"}
+                  </Button>
+                }
+              >
+                <dl className="grid grid-cols-[180px_1fr] gap-y-3 text-sm">
+                  <dt className="text-slate-500">Android Emulator (ADB)</dt>
+                  <dd className="flex items-center gap-2">
+                    {dev?.emulator?.running ? <Badge tone="success">Booted ({dev.emulator.serial})</Badge> : <Badge tone="warning">Stopped</Badge>}
+                    <span className="font-mono text-xs text-slate-500">AVD: {dev?.emulator?.avdName || "Pixel_8"}</span>
+                  </dd>
+                  <dt className="text-slate-500">Appium Server</dt>
+                  <dd className="flex items-center gap-2">
+                    {dev?.appium?.running ? <Badge tone="success">Ready (UiAutomator2)</Badge> : <Badge tone="warning">Offline</Badge>}
+                    <span className="font-mono text-xs text-slate-500">{dev?.appium?.url || "http://127.0.0.1:4723"}</span>
+                  </dd>
+                  <dt className="text-slate-500">Installed Native APKs</dt>
+                  <dd className="font-mono text-xs text-slate-700">
+                    com.bughunter.mobile.shop (DemoShopMobile.apk), com.bughunter.mobile.hotel (DemoHotelMobile.apk)
+                  </dd>
                   <dt className="text-slate-500">Bug Hunter API</dt>
                   <dd className="font-mono text-xs text-slate-800">
                     {API} ·{" "}
@@ -371,12 +403,12 @@ export default function SettingsPage() {
                       OpenAPI Interactive Docs
                     </a>
                   </dd>
-                  <dt className="text-slate-500">Browser Worker</dt>
+                  <dt className="text-slate-500">Mobile Worker</dt>
                   <dd className="flex items-center gap-2">
                     {s.worker.ok ? <Badge tone="success">Ready</Badge> : <Badge tone="warning">{s.worker.autoStart ? "Starting" : "Offline"}</Badge>}
                     <span className="font-mono text-xs text-slate-500">{s.worker.url}</span>
                   </dd>
-                  <dt className="text-slate-500">Demo Storefront</dt>
+                  <dt className="text-slate-500">Demo Shop Backend</dt>
                   <dd className="flex items-center gap-2">
                     {s.storefront.enabled ? <Badge tone="success">Running</Badge> : <Badge tone="muted">Not running</Badge>}
                     <span className="font-mono text-xs text-slate-500">{s.storefront.url}</span>
@@ -399,11 +431,11 @@ export default function SettingsPage() {
               <Panel title="Security Architecture & Secret Substitution">
                 <div className="space-y-3 text-sm text-slate-700 leading-relaxed">
                   <p>
-                    Autonomous Bug Hunter handles secrets this way:
+                    Autonomous Bug Hunter · Mobile handles secrets this way:
                   </p>
                   <ul className="list-disc space-y-1 pl-5 text-xs text-slate-600">
-                    <li><strong>Secret Substitution:</strong> AI models never receive raw passwords or API keys. Secrets are replaced with symbolic placeholders (e.g. <code>{"{{secret:password}}"}</code>) and only decrypted in the isolated browser worker.</li>
-                    <li><strong>Host Allowlisting:</strong> Browser sessions are locked to the target application host. Outbound SSRF attacks to internal metadata services (e.g. AWS 169.254.169.254) are rejected at the network proxy layer.</li>
+                    <li><strong>Secret Substitution:</strong> AI models never receive raw passwords or API keys. Secrets are replaced with symbolic placeholders (e.g. <code>{"{{secret:password}}"}</code>) and only decrypted in the isolated mobile worker.</li>
+                    <li><strong>Host Allowlisting:</strong> Mobile sessions are locked to the target application host. Outbound SSRF attacks to internal metadata services (e.g. AWS 169.254.169.254) are rejected at the network proxy layer.</li>
                     <li><strong>Dynamic Account Partitioning:</strong> RFC 5233 sub-addressing isolates user sessions without destructive database wipes.</li>
                   </ul>
                 </div>

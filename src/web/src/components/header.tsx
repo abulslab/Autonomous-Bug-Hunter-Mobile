@@ -20,7 +20,7 @@ export function Header() {
               <span className="text-base font-bold tracking-tight text-slate-900 group-hover:text-blue-600 transition-colors">
                 Autonomous Bug Hunter · Mobile
               </span>
-              <span className="rounded-sm bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-indigo-700">
+              <span className="rounded-sm bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
                 Android · Appium
               </span>
               <span className="rounded-sm bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
@@ -28,22 +28,22 @@ export function Header() {
               </span>
             </div>
             <p className="text-xs font-medium text-slate-500">
-              AI proposes, the engine verifies · UiAutomator2 &amp; Real Android APKs
+              AI proposes, the engine verifies · Native Android APKs on Emulator (UiAutomator2)
             </p>
           </Link>
 
-          {/* Right: Demo / Emulator Lab & Settings */}
+          {/* Right: Demo Presets & Settings */}
           <div className="flex items-center gap-2.5 text-xs">
-            {/* Demo & Emulator Lab Button */}
+            {/* Demo Button - triggers Quick Demo Presets & Seeded Defects Modal */}
             <button
               type="button"
               onClick={() => setDemoOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 font-medium transition-colors border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900 shadow-2xs cursor-pointer"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7 2a1 1 0 00-.707 1.707L7 4.414v3.758a1 1 0 01-.293.707l-4 4C.814 14.773 2.158 18 4.828 18h10.344c2.67 0 4.014-3.227 2.121-5.121l-4-4A1 1 0 0113 8.172V4.414l.707-.707A1 1 0 0013 2H7zm2 6.172V4h2v4.172a3 3 0 00.879 2.12l1.027 1.028a4 4 0 00-2.12-.32 4 4 0 00-2.12.32l1.027-1.028A3 3 0 009 8.172z" clipRule="evenodd" />
               </svg>
-              <span>Mobile Lab &amp; APKs</span>
+              <span>Android APKs &amp; Demo</span>
             </button>
 
             {/* Settings Link */}
@@ -65,7 +65,7 @@ export function Header() {
         </div>
       </header>
 
-      {/* Demo & Android Emulator Modal */}
+      {/* Demo Modal */}
       <DemoModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </>
   );

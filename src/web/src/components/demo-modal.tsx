@@ -13,11 +13,10 @@ interface DemoModalProps {
 
 export function DemoModal({ open, onClose }: DemoModalProps) {
   const router = useRouter();
-  const status = useApi<any>("/hunter/status", { refetch: 4000 });
+  const status = useApi<any>("/hunter/status", { refetch: 5000 });
   const [activeApp, setActiveApp] = useState<string>("shop");
   const [defectState, setDefectState] = useState<Record<string, Record<string, boolean>>>({});
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
-  const [emuBusy, setEmuBusy] = useState<string | null>(null);
 
   const toggle = useAction(
     async ({ app, flags }: { app: string; flags: Record<string, boolean> }) => {
@@ -28,19 +27,8 @@ export function DemoModal({ open, onClose }: DemoModalProps) {
   );
 
   const demos: any[] = (status.data?.demos ?? []).filter((d: any) => d.enabled);
-  const device = status.data?.device ?? {
-    device: "Pixel_8",
-    platform: "Android 16 (API 36)",
-    driver: "UiAutomator2",
-    emulator: "stopped",
-    appium: "stopped",
-    apks: [
-      { app: "shop", name: "DemoShopMobile.apk", package: "com.bughunter.mobile.shop", built: true, installed: false },
-      { app: "hotel", name: "DemoHotelMobile.apk", package: "com.bughunter.mobile.hotel", built: true, installed: false },
-      { app: "voice", name: "VoiceAppointmentMobile.apk", package: "com.bughunter.mobile.voice", built: true, installed: false },
-    ],
-  };
 
+  // Initialize defect state from status when opened
   useEffect(() => {
     if (status.data?.demos) {
       const state: Record<string, Record<string, boolean>> = {};
@@ -56,6 +44,7 @@ export function DemoModal({ open, onClose }: DemoModalProps) {
     }
   }, [status.data?.demos]);
 
+  // Handle escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) onClose();
@@ -103,33 +92,6 @@ export function DemoModal({ open, onClose }: DemoModalProps) {
     }
   };
 
-  const handleEmulatorAction = async (action: "start" | "show" | "stop", app = "shop") => {
-    setEmuBusy(action);
-    try {
-      const path =
-        action === "start"
-          ? "/hunter/device/emulator/start"
-          : action === "show"
-          ? "/hunter/device/emulator/show"
-          : "/hunter/device/emulator/stop";
-      await api(path, { method: "POST", json: action === "start" ? { app, showWindow: true } : {} });
-      await status.refetch();
-      setSavedMsg(
-        action === "start"
-          ? `Pixel_8 Emulator & Appium (UiAutomator2) ready (${app.toUpperCase()} APK launched)`
-          : action === "show"
-          ? "Android Emulator window brought to foreground"
-          : "Android Emulator stopped"
-      );
-      setTimeout(() => setSavedMsg(null), 3500);
-    } catch (e: any) {
-      setSavedMsg(e?.message ?? "Emulator command failed.");
-      setTimeout(() => setSavedMsg(null), 3500);
-    } finally {
-      setEmuBusy(null);
-    }
-  };
-
   const handleSelectPreset = (app: string) => {
     onClose();
     router.push(`/hunts/new?preset=${app}`);
@@ -138,18 +100,18 @@ export function DemoModal({ open, onClose }: DemoModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="w-full max-w-3xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50/70">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-bold text-slate-900">Mobile Lab · Android APKs, Emulator &amp; Seeded Defects</span>
-              <Badge tone="accent">Appium · UiAutomator2</Badge>
+              <span className="text-base font-bold text-slate-900">Android Demo APKs &amp; Seeded Defects</span>
+              <Badge tone="accent">Pixel_8 · Appium</Badge>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Boot the Pixel_8 Android Emulator with real Kotlin/Compose APKs or configure ground-truth defect switches.
+              Select a compiled native Android APK target or adjust ground-truth defect injection to measure false positives.
             </p>
           </div>
           <button
@@ -168,89 +130,25 @@ export function DemoModal({ open, onClose }: DemoModalProps) {
 
         {/* Body */}
         <div className="p-6 overflow-y-auto space-y-6">
-          {/* Android Emulator & Appium Status Bar */}
-          <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4 space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">
-                  Android Emulator ({device.device}) &amp; Appium Server
-                </span>
-                <Badge tone={device.emulator === "running" ? "success" : device.emulator === "booting" ? "warning" : "neutral"}>
-                  Emulator: {device.emulator ?? "stopped"}
-                </Badge>
-                <Badge tone={device.appium === "running" ? "success" : "neutral"}>
-                  Appium (4723): {device.appium ?? "stopped"}
-                </Badge>
-                <Badge tone="accent">{device.driver ?? "UiAutomator2"}</Badge>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={emuBusy !== null}
-                  onClick={() => handleEmulatorAction("start", activeApp)}
-                >
-                  {emuBusy === "start" ? "Booting Pixel_8 & Installing APKs…" : "Start Emulator & Appium"}
-                </Button>
-                {device.emulator === "running" && (
-                  <>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={emuBusy !== null}
-                      onClick={() => handleEmulatorAction("show")}
-                    >
-                      Show Window
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={emuBusy !== null}
-                      onClick={() => handleEmulatorAction("stop")}
-                    >
-                      Stop
-                    </Button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Real Compiled APK Packages */}
-            <div className="grid gap-2 sm:grid-cols-3 pt-1">
-              {(device.apks ?? []).map((apk: any) => (
-                <div key={apk.package} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-900">{apk.name}</span>
-                    <Badge tone={apk.installed ? "success" : apk.built ? "accent" : "neutral"}>
-                      {apk.installed ? "Installed" : apk.built ? "Built APK" : "Source"}
-                    </Badge>
-                  </div>
-                  <div className="font-mono text-[11px] text-slate-500 truncate mt-0.5">{apk.package}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Quick Demo Presets */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-              Target Mobile Applications (Kotlin + Jetpack Compose APKs)
+              Compiled Native Android APK Targets
             </h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-xl border border-slate-200 p-4 hover:border-blue-400 transition-colors bg-white">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Demo Shop Mobile</h4>
-                    <p className="font-mono text-xs text-indigo-700 mt-0.5">com.bughunter.mobile.shop</p>
-                    <p className="font-mono text-[11px] text-slate-400">android/apks/DemoShopMobile.apk · :5290</p>
+                    <h4 className="text-sm font-bold text-slate-900">Demo Shop Android APK</h4>
+                    <p className="font-mono text-xs text-slate-500 mt-0.5">com.bughunter.mobile.shop · DemoShopMobile.apk</p>
                   </div>
                   <Badge tone="success">Native APK</Badge>
                 </div>
                 <p className="text-xs text-slate-600 mt-2">
-                  Android e-commerce app with Catalog, Cart &amp; Checkout, Orders, Staff Order Desk, and Sign-In tabs.
+                  Jetpack Compose Android e-commerce app with catalog, coupons, search, cart, and checkout workflows (API on :5290 via adb reverse).
                 </p>
                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400">8 Backlog Stories · 10 Seeded Defects</span>
+                  <span className="text-[11px] text-slate-400">8 Backlog Stories</span>
                   <Button
                     variant="primary"
                     size="sm"
@@ -264,17 +162,16 @@ export function DemoModal({ open, onClose }: DemoModalProps) {
               <div className="rounded-xl border border-slate-200 p-4 hover:border-blue-400 transition-colors bg-white">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="text-sm font-bold text-slate-900">Demo Hotel Mobile</h4>
-                    <p className="font-mono text-xs text-indigo-700 mt-0.5">com.bughunter.mobile.hotel</p>
-                    <p className="font-mono text-[11px] text-slate-400">android/apks/DemoHotelMobile.apk · :5291</p>
+                    <h4 className="text-sm font-bold text-slate-900">Demo Hotel Android APK</h4>
+                    <p className="font-mono text-xs text-slate-500 mt-0.5">com.bughunter.mobile.hotel · DemoHotelMobile.apk</p>
                   </div>
                   <Badge tone="accent">Native APK</Badge>
                 </div>
                 <p className="text-xs text-slate-600 mt-2">
-                  Android hotel booking app with Rooms &amp; Book, My Stays, and Front Desk check-in/out workflows.
+                  Jetpack Compose Android hotel booking app with date pickers, room capacities, breakfast, and cancellation (API on :5291 via adb reverse).
                 </p>
                 <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400">6 Backlog Stories · 8 Seeded Defects</span>
+                  <span className="text-[11px] text-slate-400">6 Backlog Stories</span>
                   <Button
                     variant="primary"
                     size="sm"
@@ -291,7 +188,7 @@ export function DemoModal({ open, onClose }: DemoModalProps) {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                Configure Seeded Mobile &amp; Backend Defects
+                Configure Seeded Demo Defects
               </h3>
               <div className="flex gap-1.5">
                 {demos.map((d) => (

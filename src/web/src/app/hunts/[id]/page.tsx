@@ -5,7 +5,7 @@ import { use, useState } from "react";
 import { Badge, Button, ErrorBox, PageHeader, Panel, Spinner, Stat, Table, Tabs, fmtDate, fmtDuration, fmtUsd, statusTone } from "@/components/ui";
 import { FindingCard, LiveMonitor, Shot, ShotViewer, describe, driverLabel } from "@/components/hunt";
 import { ReplayInspector } from "@/components/replay-inspector";
-import { api, download, useAction, useApi } from "@/lib/api";
+import { api, download, formatAndroidTarget, useAction, useApi } from "@/lib/api";
 
 const intentNote: Record<string, string> = {
   Held: "Its success checks were evaluated and held.",
@@ -41,8 +41,8 @@ export default function HuntPage({ params }: { params: Promise<{ id: string }> }
   return (
     <>
       <PageHeader
-        title={<span className="flex items-center gap-3">Hunt <span className="font-mono">{h.id}</span><Badge tone={statusTone(h.status)}>{h.status}</Badge></span>}
-        subtitle={<span className="font-mono text-xs">{h.url}</span>}
+        title={<span className="flex items-center gap-3">Android Hunt <span className="font-mono">{h.id}</span><Badge tone={statusTone(h.status)}>{h.status}</Badge></span>}
+        subtitle={<span className="font-mono text-xs">{formatAndroidTarget(h.url)} · {h.url}</span>}
         actions={<>
           <select aria-label="Export" value={exportAs} className="h-9 rounded-md border border-slate-300 bg-white px-2 text-sm text-slate-700"
             onChange={(e) => { const f = e.target.value; setExportAs(""); if (f) download(`/hunter/hunts/${id}/report?format=${f}`, `${id}.${f === "junit" ? "xml" : f === "sarif" ? "sarif" : f}`).catch(() => {}); }}>
@@ -187,7 +187,7 @@ export default function HuntPage({ params }: { params: Promise<{ id: string }> }
             </div>
           </Panel>
           <div className="space-y-3">
-            <Panel title={`Page after step ${shown}`}>
+            <Panel title={`Android screen after step ${shown}`}>
               <Shot key={shown} hunt={h.id} n={shown} onOpen={() => setZoom(shown)} />
               <p className="mt-2 truncate font-mono text-xs text-slate-500">{h.steps.find((s: any) => s.n === shown)?.url}</p>
             </Panel>
@@ -197,7 +197,7 @@ export default function HuntPage({ params }: { params: Promise<{ id: string }> }
 
       {tab === "coverage" && (
         <div className="grid gap-5 lg:grid-cols-2">
-          <Panel title={`Pages (${h.coverage.pages.length})`}><ul className="space-y-1 font-mono text-xs text-slate-700">{h.coverage.pages.map((p: string) => <li key={p}>{p}</li>)}</ul></Panel>
+          <Panel title={`Mobile screens (${h.coverage.pages.length})`}><ul className="space-y-1 font-mono text-xs text-slate-700">{h.coverage.pages.map((p: string) => <li key={p}>{p}</li>)}</ul></Panel>
           <Panel title={`API endpoints exercised (${h.coverage.endpoints.length})`} subtitle={`${h.coverage.formsSubmitted} submissions, ${h.coverage.requests} requests`}>
             <ul className="space-y-1 font-mono text-xs text-slate-700">{h.coverage.endpoints.map((p: string) => <li key={p}>{p}</li>)}</ul>
           </Panel>

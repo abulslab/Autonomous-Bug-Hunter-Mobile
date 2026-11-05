@@ -6,7 +6,7 @@ import { Header } from "@/components/header";
 
 export const metadata: Metadata = {
   title: "Autonomous Bug Hunter · Mobile",
-  description: "Explores Android mobile apps via Appium (UiAutomator2) & Android Emulator (Pixel_8) and reports only bugs it can prove, with evidence, replay and Appium + Playwright tests for each.",
+  description: "Explores an Android application on a real emulator via Appium (UiAutomator2) and reports only bugs it can prove, with evidence, replay and an Appium test for each.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
